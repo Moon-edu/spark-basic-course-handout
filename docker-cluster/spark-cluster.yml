@@ -26,6 +26,7 @@ services:
     ports:
       - "8081:8081"
     hostname: worker-1
+    user: root
     networks:
       spark-network:
         ipv4_address: 172.18.0.16
@@ -41,6 +42,7 @@ services:
     ports:
       - "8082:8081"
     hostname: worker-2
+    user: root
     networks:
       spark-network:
         ipv4_address: 172.18.0.15
@@ -56,6 +58,7 @@ services:
     ports:
       - "8083:8081"
     hostname: worker-3
+    user: root
     networks:
       spark-network:
         ipv4_address: 172.18.0.14
