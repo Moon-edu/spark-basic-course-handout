@@ -1,0 +1,146 @@
+version: '3'
+services:
+  master-node:
+    image: bitnami/spark:3.5.0
+    container_name: master-node
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8080:8080"
+    user: root
+    hostname: master-node
+    volumes:
+      - ../logs/master:/opt/bitnami/spark/work
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.17
+
+  worker-1:
+    image: bitnami/spark:3.5.0
+    container_name: worker-1
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://master-node:7077
+    volumes:
+      - ../logs/worker1:/opt/bitnami/spark/work
+    ports:
+      - "8081:8081"
+    hostname: worker-1
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.16
+
+  worker-2:
+    image: bitnami/spark:3.5.0
+    container_name: worker-2
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://master-node:7077
+    volumes:
+      - ../logs/worker2:/opt/bitnami/spark/work
+    ports:
+      - "8082:8081"
+    hostname: worker-2
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.15
+
+  worker-3:
+    image: bitnami/spark:3.5.0
+    container_name: worker-3
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://master-node:7077
+    volumes:
+      - ../logs/worker3:/opt/bitnami/spark/work
+    ports:
+      - "8083:8081"
+    hostname: worker-3
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.14
+
+  spark-history:
+    image: apache/spark:3.5.0
+    container_name: spark-history
+    depends_on:
+      - master-node
+      - s3-storage
+    environment:
+      SPARK_HISTORY_OPTS: "-Dspark.history.fs.logDirectory=s3a://jobhistory/spark"
+    volumes:
+      - ./spark-history.properties:/opt/spark/conf/spark-history.properties
+      - ./hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+      - ./aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      - ./run-history-server.sh:/scripts/run-history-server.sh
+    ports:
+      - "18080:18080"
+    hostname: spark-history
+    command: /scripts/run-history-server.sh
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.12
+
+  s3-storage:
+    image: localstack/localstack:2.3
+    container_name: s3-storage
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
+      - ../dataset:/dataset
+    hostname: s3-storage
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.13
+
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml
+    user: root
+    hostname: loki
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.20
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - ../logs:/usr/local/spark/logs:ro
+    ports:
+      - "9080:9080"
+    hostname: promtail
+    depends_on:
+      - loki
+    user: root
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.21
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-datasource.yml:/etc/grafana/provisioning/datasources/automatic.yml
+      - ./grafana-dashboard.yml:/etc/grafana/provisioning/dashboards/automatic.yml
+      - ./dashboards.json:/etc/grafana/dashboards/Logs.json
+    networks:
+      spark-network:
+        ipv4_address: 172.18.0.22
+  
+networks:
+  spark-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1

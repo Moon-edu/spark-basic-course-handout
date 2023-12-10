@@ -1,0 +1,63 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+positions:
+  filename: /tmp/positions.yaml
+
+scrape_configs:
+  - job_name: spark
+    pipeline_stages:
+      - match:
+          selector: '{job="worker1-stdout"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) (?P<level>\w+) (?P<message>.+)$'
+            - labels:
+                timestamp: timestamp
+                level: level
+                message: message
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: "driver-stdout"
+          __path__: /usr/local/spark/logs/driver/*/*/stdout
+      - targets:
+          - localhost
+        labels:
+          job: "driver-stderr"
+          __path__: /usr/local/spark/logs/driver/*/*/stderr
+      - targets:
+          - localhost
+        labels:
+          job: "worker1-stdout"
+          __path__: /usr/local/spark/logs/worker1/*/*/stdout
+      - targets:
+          - localhost
+        labels:
+          job: "worker1-stderr"
+          __path__: /usr/local/spark/logs/worker1/*/*/stderr
+      - targets:
+          - localhost
+        labels:
+          job: "worker2-stdout"
+          __path__: /usr/local/spark/logs/worker2/*/*/stdout
+      - targets:
+          - localhost
+        labels:
+          job: "worker2-stderr"
+          __path__: /usr/local/spark/logs/worker2/*/*/stderr
+      - targets:
+          - localhost
+        labels:
+          job: "worker3-stdout"
+          __path__: /usr/local/spark/logs/worker3/*/*/stdout
+      - targets:
+          - localhost
+        labels:
+          job: "worker3-stderr"
+          __path__: /usr/local/spark/logs/worker3/*/*/stderr
