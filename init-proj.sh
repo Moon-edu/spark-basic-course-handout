@@ -32,9 +32,10 @@ git clone https://github.com/Moon-edu/spark-basic-course-handout.git
 cd spark-basic-course-handout
 git lfs install
 git pull
+cd ..
 
-cd ~
 git clone https://github.com/Moon-edu/spark-basic-course-hw.git
 cd spark-basic-course-hw
 git lfs install
 git pull
+cd ..
