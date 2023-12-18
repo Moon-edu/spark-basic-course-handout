@@ -26,3 +26,12 @@ sudo apt install -y zip
 
 # Install xz
 sudo apt install -y xz-utils
+
+#VSCode CLI
+code
+
+# Repo
+git clone https://github.com/Moon-edu/spark-basic-course-handout.git
+cd spark-basic-course-handout
+git lfs install
+git pull
